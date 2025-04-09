@@ -1,6 +1,7 @@
 from faker import Faker
 from rich.console import Console
 from rich.table import Table
+from rich.live import Live
 import time
 import random
 import threading
@@ -23,8 +24,8 @@ def generate_telemetry():
         }
         time.sleep(0.5)
 
-# Display telemetry
-def display_telemetry():
+# Create the table for display
+def update_dashboard():
     table = Table(title=f"Mission Telemetry: {latest_data['callsign']}")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="magenta")
@@ -33,7 +34,7 @@ def display_telemetry():
     table.add_row("Latitude", str(latest_data["lat"]))
     table.add_row("Longitude", str(latest_data["lon"]))
     table.add_row("Status", latest_data["status"])
-    console.print(table)
+    return table
 
 # Main code
 if __name__ == "__main__":
@@ -41,7 +42,9 @@ if __name__ == "__main__":
     telemetry_thread = threading.Thread(target=generate_telemetry)
     telemetry_thread.daemon = True
     telemetry_thread.start()
-    while True:
-        if latest_data:
-            display_telemetry()
-        time.sleep(1)
+    # Start with a blank table until data comes in
+    with Live(Table(), refresh_per_second=2) as live:
+        while True:
+            if latest_data:  # Only update when data’s ready
+                live.update(update_dashboard())
+            time.sleep(1)
